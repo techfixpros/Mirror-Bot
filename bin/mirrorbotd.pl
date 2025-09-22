@@ -27,6 +27,7 @@ push @INC, "$base_dir/lib";
 eval "use VersionInfo;";
 eval "use Tools;";
 eval "use Mirror;";
+eval "use CTCP;";
 
 $| = 1;
 
