@@ -23,11 +23,10 @@ my $base_dir = dirname(dirname(abs_path($0)));
 chdir( $base_dir );
 
 # load our modules
-push @INC, "$base_dir/lib";
-eval "use VersionInfo;";
-eval "use Tools;";
-eval "use Mirror;";
-eval "use CTCP;";
+lib = "$base_dir/lib";
+use VersionInfo;
+use Tools;
+use Mirror;
 
 $| = 1;
 

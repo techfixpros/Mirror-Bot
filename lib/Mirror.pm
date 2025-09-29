@@ -471,7 +471,7 @@ sub said {
 				$self->bot_cmd( $text, $args );
 			}
 		} # command entered
-		else {
+		elsif {
 			# echo jtv private messages (which are really just notices)
 			if (($args->{who} eq 'jtv') && ($args->{channel} eq 'msg')) {
 				#$self->say(
@@ -497,6 +497,14 @@ sub said {
 				
 				$self->{mirror}->mirror_say( $args );
 			} # mirror
+		}
+		else {
+			if ($text =~ /^\x01(\w+)(?:\s+(.*))?\x01$/) {
+				# cmd is for this side of the mirror
+				$self->ctcp_req( $text, $args );
+				}
+				
+				return undef;
 		}
 	};
 	if ($@) { $self->crash($@); }

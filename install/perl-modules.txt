@@ -5,4 +5,3 @@ LWP::UserAgent
 URI::Escape
 HTTP::Date
 Crypt::SSLeay
-POE::Component::IRC::Plugin::CTCP
