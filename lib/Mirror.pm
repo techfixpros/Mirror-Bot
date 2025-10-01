@@ -146,68 +146,71 @@ sub irc_cmd {
 
 sub ctcp_req {
 	my ($self, $text, $args) = @_;
-	if ($text =~ /^\x01(\w+)(?:\s+(.*))?\x01$/) {
-		# CTCP request (VERSION, PING, TIME, etc.)
-		my $ctcp_cmd  = $1;
-		my $ctcp_args = $2 || '';
-		$self->log_debug("Received CTCP $ctcp_cmd from $args->{who}");
+	my $ctcp_cmd = $1;
+	my $ctcp_args = $2 || '';
+	my $target = { who => $args->{who}, channel => $args->{channel} };
+	
+	if ($text =~ /^\\x01(\w+)(?:\s+(.*))?\\x01$/) {
+		$self->log_debug("Received CTCP $ctcp_cmd from $target->{who}");
+		$self->log_debug("Received CTCP $ctcp_cmd");
 
-	if ($ctcp_cmd eq 'VERSION') {
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',  # CTCP replies go via NOTICE
-				body    => "\x01VERSION Mirror-Bot v1.0.0-1 (stable)\x01"
-			);
-	}
-	elsif ($ctcp_cmd eq 'PING') {
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',
-				body    => "\x01PING $ctcp_args\x01"
-			);
-	}
-	elsif ($ctcp_cmd eq 'TIME') {
-			my $now = scalar localtime();
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',
-				body    => "\x01TIME $now\x01"
-			);
-	}
-	elsif ($ctcp_cmd eq 'FINGER') {
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',
-				body    => "\x01FINGER $self->{params}->{owner}\x01"
-			);
-	}
-	elsif ($ctcp_cmd eq 'CLIENTINFO') {
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',
-				body    => "\x01CLIENTINFO https://github.com/jhuckaby/Mirror-Bot\x01"
-			);
-	}
-	elsif ($ctcp_cmd eq 'USERINFO') {
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',
-				body    => "\x01USERINFO Mirror-Bot\x01"
-			);
-	}
-	elsif ($ctcp_cmd eq 'SOURCE') {
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',
-				body    => "\x01SOURCE https://github.com/techfixpros/Mirror-Bot\x01"
-			);
+		if ($ctcp_cmd eq 'VERSION') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',  # CTCP replies go via NOTICE
+					body    => "\x01VERSION Mirror-Bot v1.0.0-1 (stable)\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'PING') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01PING $ctcp_args\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'TIME') {
+				my $now = scalar localtime();
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01TIME $now\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'FINGER') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01FINGER $self->{params}->{owner}\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'CLIENTINFO') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01CLIENTINFO https://github.com/jhuckaby/Mirror-Bot\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'USERINFO') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01USERINFO Mirror-Bot\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'SOURCE') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01SOURCE https://github.com/techfixpros/Mirror-Bot\x01"
+				);
+		}
 	}
 	else {
 			# Unknown CTCP request
 			$self->say(
 				who     => $args->{who},
 				channel => 'notice',
-				body    => "\x01$ctcp_cmd Not supported\x01"
+				body    => "\x01CTCP $text Not supported\x01"
 			);
 	}
 }
@@ -371,37 +374,18 @@ sub bot_cmd {
 	}
 	elsif ($text =~ /^ctcp\s+(\S+)\s+(\w+)(?:\s+(.+))?$/i) {
 		# Send CTCP request
-		my $target = $1;
-		my $ctcp_cmd  = uc($2);
+		my $ctcp_cmd  = uc($1);
+		my $target = $2;
 		my $ctcp_args = $3 || '';
 		my $body = "\x01$ctcp_cmd" . ($ctcp_args ? " $ctcp_args" : "") . "\x01";
 
-		$self->log_debug("Sending CTCP $ctcp_cmd to $target with args: $ctcp_args");
+		$self->log_debug("Sending CTCP request $ctcp_cmd to $target");
 		$self->say(
 			who     => $target,
 			channel => 'msg',   # PRIVMSG for CTCP
 			body    => $body
 		);
 	}
-#	elsif ($text =~ /^\x01(.*)\x01$/) {
-#		my $ctcp_content = $1;
-#		my ($command, $params) = split / /, $ctcp_content, 2;
-#
-		# Handle common CTCP commands
-#		if (uc($command) eq 'VERSION') {
-#			$self->send_notice($msg->{nick}, "\x01VERSION MyPerlBot v1.0\x01");
-#		} elsif (uc($command) eq 'PING') {
-#			$self->send_notice($msg->{nick}, "\x01PING $params\x01");
-#		} elsif (uc($command) eq 'CLIENTINFO') {
-#		$self->send_notice($msg->{nick}, "\x01CLIENTINFO PING VERSION\x01");
-#		}
-#	}
-
-#	elsif ($text =~ /^\x01(.*?)\x01$/) {
-#		my $ctcp_body = $1;
-#		# Handle the CTCP command
-#		handle_ctcp_command($ctcp_body, $sender);
-#	}
 }
 
 ##
@@ -471,7 +455,12 @@ sub said {
 				$self->bot_cmd( $text, $args );
 			}
 		} # command entered
-		elsif {
+
+		elsif ($text =~ /^\\x01(\w+)(?:\s+(.*))?\\x01$/) {
+				# cmd is for this side of the mirror
+				$self->ctcp_req( $text, $args );
+		}
+		else {
 			# echo jtv private messages (which are really just notices)
 			if (($args->{who} eq 'jtv') && ($args->{channel} eq 'msg')) {
 				#$self->say(
@@ -497,14 +486,6 @@ sub said {
 				
 				$self->{mirror}->mirror_say( $args );
 			} # mirror
-		}
-		else {
-			if ($text =~ /^\x01(\w+)(?:\s+(.*))?\x01$/) {
-				# cmd is for this side of the mirror
-				$self->ctcp_req( $text, $args );
-				}
-				
-				return undef;
 		}
 	};
 	if ($@) { $self->crash($@); }
