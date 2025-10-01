@@ -322,10 +322,10 @@ sub ctcp_req {
 	my $ctcp_cmd = $1;
 	my $ctcp_args = $2 || '';
 	my $target = { who => $args->{who}, channel => $args->{channel} };
+	$self->log_debug("Subroutine received CTCP $ctcp_cmd"); #testing flow
 	
 	if ($text =~ /^\\x01(\w+)(?:\s+(.*))?\\x01$/) {
 		$self->log_debug("Received CTCP $ctcp_cmd from $target->{who}");
-		$self->log_debug("Received CTCP $ctcp_cmd");
 
 		if ($ctcp_cmd eq 'VERSION') {
 				$self->say(
@@ -458,6 +458,7 @@ sub said {
 
 		elsif ($text =~ /^\\x01(\w+)(?:\s+(.*))?\\x01$/) {
 				# ctcp request
+				$self->log_debug("Received CTCP request and sent to ctcp subroutine"); #testing flow
 				$self->ctcp_req( $text, $args );
 		}
 		else {
