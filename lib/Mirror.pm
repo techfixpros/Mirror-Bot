@@ -333,6 +333,7 @@ sub ctcp_req {
 					channel => 'notice',  # CTCP replies go via NOTICE
 					body    => "\x01VERSION Mirror-Bot v1.0.0-1 (stable)\x01"
 				);
+				$self->log_debug("Received CTCP $ctcp_cmd from $target->{who} and attempted to respond");
 		}
 		elsif ($ctcp_cmd eq 'PING') {
 				$self->say(
