@@ -144,77 +144,6 @@ sub irc_cmd {
     );
 }
 
-sub ctcp_req {
-	my ($self, $text, $args) = @_;
-	my $ctcp_cmd = $1;
-	my $ctcp_args = $2 || '';
-	my $target = { who => $args->{who}, channel => $args->{channel} };
-	
-	if ($text =~ /^\\x01(\w+)(?:\s+(.*))?\\x01$/) {
-		$self->log_debug("Received CTCP $ctcp_cmd from $target->{who}");
-		$self->log_debug("Received CTCP $ctcp_cmd");
-
-		if ($ctcp_cmd eq 'VERSION') {
-				$self->say(
-					who     => $args->{who},
-					channel => 'notice',  # CTCP replies go via NOTICE
-					body    => "\x01VERSION Mirror-Bot v1.0.0-1 (stable)\x01"
-				);
-		}
-		elsif ($ctcp_cmd eq 'PING') {
-				$self->say(
-					who     => $args->{who},
-					channel => 'notice',
-					body    => "\x01PING $ctcp_args\x01"
-				);
-		}
-		elsif ($ctcp_cmd eq 'TIME') {
-				my $now = scalar localtime();
-				$self->say(
-					who     => $args->{who},
-					channel => 'notice',
-					body    => "\x01TIME $now\x01"
-				);
-		}
-		elsif ($ctcp_cmd eq 'FINGER') {
-				$self->say(
-					who     => $args->{who},
-					channel => 'notice',
-					body    => "\x01FINGER $self->{params}->{owner}\x01"
-				);
-		}
-		elsif ($ctcp_cmd eq 'CLIENTINFO') {
-				$self->say(
-					who     => $args->{who},
-					channel => 'notice',
-					body    => "\x01CLIENTINFO https://github.com/jhuckaby/Mirror-Bot\x01"
-				);
-		}
-		elsif ($ctcp_cmd eq 'USERINFO') {
-				$self->say(
-					who     => $args->{who},
-					channel => 'notice',
-					body    => "\x01USERINFO Mirror-Bot\x01"
-				);
-		}
-		elsif ($ctcp_cmd eq 'SOURCE') {
-				$self->say(
-					who     => $args->{who},
-					channel => 'notice',
-					body    => "\x01SOURCE https://github.com/techfixpros/Mirror-Bot\x01"
-				);
-		}
-	}
-	else {
-			# Unknown CTCP request
-			$self->say(
-				who     => $args->{who},
-				channel => 'notice',
-				body    => "\x01CTCP $text Not supported\x01"
-			);
-	}
-}
-
 sub bot_cmd {
 	# execute bot command from text entered
 	my ($self, $text, $args) = @_;
@@ -379,12 +308,83 @@ sub bot_cmd {
 		my $ctcp_args = $3 || '';
 		my $body = "\x01$ctcp_cmd" . ($ctcp_args ? " $ctcp_args" : "") . "\x01";
 
-		$self->log_debug("Sending CTCP request $ctcp_cmd to $target");
+		$self->log_debug("Sending CTCP request $ctcp_cmd to $target with args: $ctcp_args");
 		$self->say(
 			who     => $target,
 			channel => 'msg',   # PRIVMSG for CTCP
 			body    => $body
 		);
+	}
+}
+
+sub ctcp_req {
+	my ($self, $text, $args) = @_;
+	my $ctcp_cmd = $1;
+	my $ctcp_args = $2 || '';
+	my $target = { who => $args->{who}, channel => $args->{channel} };
+	
+	if ($text =~ /^\\x01(\w+)(?:\s+(.*))?\\x01$/) {
+		$self->log_debug("Received CTCP $ctcp_cmd from $target->{who}");
+		$self->log_debug("Received CTCP $ctcp_cmd");
+
+		if ($ctcp_cmd eq 'VERSION') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',  # CTCP replies go via NOTICE
+					body    => "\x01VERSION Mirror-Bot v1.0.0-1 (stable)\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'PING') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01PING $ctcp_args\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'TIME') {
+				my $now = scalar localtime();
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01TIME $now\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'FINGER') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01FINGER $self->{params}->{owner}\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'CLIENTINFO') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01CLIENTINFO https://github.com/jhuckaby/Mirror-Bot\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'USERINFO') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01USERINFO Mirror-Bot\x01"
+				);
+		}
+		elsif ($ctcp_cmd eq 'SOURCE') {
+				$self->say(
+					who     => $args->{who},
+					channel => 'notice',
+					body    => "\x01SOURCE https://github.com/techfixpros/Mirror-Bot\x01"
+				);
+		}
+	}
+	else {
+			# Unknown CTCP request
+			$self->say(
+				who     => $args->{who},
+				channel => 'notice',
+				body    => "\x01CTCP $text Not supported\x01"
+			);
 	}
 }
 
@@ -457,7 +457,7 @@ sub said {
 		} # command entered
 
 		elsif ($text =~ /^\\x01(\w+)(?:\s+(.*))?\\x01$/) {
-				# cmd is for this side of the mirror
+				# ctcp request
 				$self->ctcp_req( $text, $args );
 		}
 		else {
@@ -897,33 +897,5 @@ sub mirror_userquit {
 	$self->log_debug( "in mirror_userquit(): " . Dumper($args) );
 	$self->log_debug( $self->{mirror}->{params}->{mirror_name} . ' user "' . $args->{who} . '" has left (' . $args->{body} . ').' );
 }
-
-#sub handle_ctcp_command {
-#    my ($ctcp_body, $sender) = @_;
-#
-#    # Split the command and arguments
-#    my ($command, $args) = split(/ /, $ctcp_body, 2);
-#
-#    # Convert to uppercase for case-insensitive matching
-#   my $uc_command = uc($command);
-#
-#    if ($uc_command eq 'PING') {
-#        # CTCP PING request: Respond with a NOTICE containing the PONG
-#        # and the received arguments.
-#        my $pong_response = "\x01PING $args\x01";
-#        send_notice($sender, $pong_response);
-#
-#    } elsif ($uc_command eq 'VERSION') {
-#        # CTCP VERSION request: Respond with your bot's version.
-#        my $version_response = "\x01VERSION MyCoolBot v1.0\x01";
-#        send_notice($sender, $version_response);
-#
-#    } elsif ($uc_command eq 'TIME') {
-#        # CTCP TIME request: Respond with the current date and time.
-#        my $time_response = "\x01TIME " . localtime() . "\x01";
-#        send_notice($sender, $time_response);
-#    }
-#    # Add more CTCP commands here (e.g., CLIENTINFO, FINGER)
-#}
 
 1;
